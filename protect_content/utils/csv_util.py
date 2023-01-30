@@ -22,7 +22,7 @@ def save_csv(list_dict: list[dict], path_csv: Path):
         clone=0,
     )
     for dict_ in list_dict:
-        for key in dict_default.keys():
+        for key in dict_default:
             if key not in dict_:
                 dict_[key] = dict_default[key]
 
@@ -47,12 +47,5 @@ def open_csv(path_csv: Path) -> list[dict]:
         reader = csv.reader(arquivo_csv)
         # Get the field of fields (first line of the CSV file)
         header = next(reader)
-        # Initialize the List of Empty Dictionaries
-        data_list_dict = []
-        # Item on the remaining lines of the CSV file
-        for row in reader:
-            # Create a dictionary for the current line with the fields as keys and line values as values
-            dict_ = dict(zip(header, row))
-            # Add the dictionary to the dictionary list
-            data_list_dict.append(dict_)
+        data_list_dict = [dict(zip(header, row)) for row in reader]
     return data_list_dict

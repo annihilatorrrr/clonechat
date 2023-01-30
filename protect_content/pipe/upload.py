@@ -34,12 +34,7 @@ async def get_next_to_upload(
             sorted({int(item["id"]): item for item in list_data}.items())
         )  # ordered from the smallest ID to the largest
 
-        # Check if everything has been cloned. If yes, it returns zero
-        clone_done = True
-        for row_data in dict_data.values():
-            if row_data["clone"] == "0":
-                clone_done = False
-                break
+        clone_done = all(row_data["clone"] != "0" for row_data in dict_data.values())
         if clone_done:
             return 0
 
@@ -56,12 +51,14 @@ async def get_next_to_upload(
 def get_caption(message_id: int, file_path_hist: Path) -> str:
 
     list_dict_msg = json.loads(open(file_path_hist, "r").read())
-    caption = ""
-    for dict_msg in list_dict_msg:
-        if dict_msg["id"] == message_id:
-            caption = dict_msg.get("caption", "")
-            break
-    return caption
+    return next(
+        (
+            dict_msg.get("caption", "")
+            for dict_msg in list_dict_msg
+            if dict_msg["id"] == message_id
+        ),
+        "",
+    )
 
 
 async def send_video(
@@ -175,12 +172,14 @@ async def send_voice(
 def get_sticker_id(message_id: int, file_path_hist: Path) -> str:
 
     list_dict_msg = json.loads(open(file_path_hist, "r").read())
-    caption = ""
-    for dict_msg in list_dict_msg:
-        if dict_msg["id"] == message_id:
-            caption = dict_msg["sticker"].get("file_id", "")
-            break
-    return caption
+    return next(
+        (
+            dict_msg["sticker"].get("file_id", "")
+            for dict_msg in list_dict_msg
+            if dict_msg["id"] == message_id
+        ),
+        "",
+    )
 
 
 async def send_sticker(
@@ -200,12 +199,14 @@ async def send_sticker(
 def get_text(message_id: int, file_path_hist: Path) -> str:
 
     list_dict_msg = json.loads(open(file_path_hist, "r").read())
-    caption = ""
-    for dict_msg in list_dict_msg:
-        if dict_msg["id"] == message_id:
-            caption = dict_msg.get("text", "")
-            break
-    return caption
+    return next(
+        (
+            dict_msg.get("text", "")
+            for dict_msg in list_dict_msg
+            if dict_msg["id"] == message_id
+        ),
+        "",
+    )
 
 
 async def send_message(
@@ -262,43 +263,6 @@ async def upload_media(
     file_path = dict_data[message_id]["file_path"]
     caption = get_caption(message_id, history_path)
     print(f"up: {Path(file_path).name}")
-    if message_type == "video":
-        # await send_video(
-        #     client_name, session_folder, chat_id, file_path, caption
-        # )
-        time_out(
-            auto_restart_seconds,
-            send_video,
-            {
-                "client_name": client_name,
-                "session_folder": session_folder,
-                "chat_id": chat_id,
-                "file_path": file_path,
-                "caption": caption,
-            },
-            True,
-        )
-
-    if message_type == "document":
-        # await send_document(
-        #     client_name, session_folder, chat_id, file_path, caption
-        # )
-        time_out(
-            auto_restart_seconds,
-            send_document,
-            {
-                "client_name": client_name,
-                "session_folder": session_folder,
-                "chat_id": chat_id,
-                "file_path": file_path,
-                "caption": caption,
-            },
-            True,
-        )
-    if message_type == "photo":
-        await send_photo(
-            client_name, session_folder, chat_id, file_path, caption
-        )
     if message_type == "audio":
         # await send_audio(
         #     client_name, session_folder, chat_id, file_path, caption
@@ -315,7 +279,50 @@ async def upload_media(
             },
             True,
         )
-    if message_type == "voice":
+    elif message_type == "document":
+        # await send_document(
+        #     client_name, session_folder, chat_id, file_path, caption
+        # )
+        time_out(
+            auto_restart_seconds,
+            send_document,
+            {
+                "client_name": client_name,
+                "session_folder": session_folder,
+                "chat_id": chat_id,
+                "file_path": file_path,
+                "caption": caption,
+            },
+            True,
+        )
+    elif message_type == "photo":
+        await send_photo(
+            client_name, session_folder, chat_id, file_path, caption
+        )
+    elif message_type == "sticker":
+        sticker_id = get_sticker_id(message_id, history_path)
+        await send_sticker(client_name, session_folder, chat_id, sticker_id)
+    elif message_type == "text":
+        text = get_text(message_id, history_path)
+        await send_message(client_name, session_folder, chat_id, text)
+    elif message_type == "video":
+        # await send_video(
+        #     client_name, session_folder, chat_id, file_path, caption
+        # )
+        time_out(
+            auto_restart_seconds,
+            send_video,
+            {
+                "client_name": client_name,
+                "session_folder": session_folder,
+                "chat_id": chat_id,
+                "file_path": file_path,
+                "caption": caption,
+            },
+            True,
+        )
+
+    elif message_type == "voice":
         # await send_voice(
         #     client_name, session_folder, chat_id, file_path, caption
         # )
@@ -331,12 +338,6 @@ async def upload_media(
             },
             True,
         )
-    if message_type == "sticker":
-        sticker_id = get_sticker_id(message_id, history_path)
-        await send_sticker(client_name, session_folder, chat_id, sticker_id)
-    if message_type == "text":
-        text = get_text(message_id, history_path)
-        await send_message(client_name, session_folder, chat_id, text)
     print("")
 
 

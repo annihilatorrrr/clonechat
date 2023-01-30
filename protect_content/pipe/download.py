@@ -28,13 +28,17 @@ def get_next_to_download(cloneplan_path: Path) -> int:
         sorted({int(item["id"]): item for item in list_data}.items())
     )
 
-    for message_id in dict_data.keys():
-        if (
-            dict_data[message_id].get("download", "") == "0"
-            and dict_data[message_id].get("clone", "") == "0"
-        ):
-            return message_id
-    return 0
+    return next(
+        (
+            message_id
+            for message_id in dict_data.keys()
+            if (
+                dict_data[message_id].get("download", "") == "0"
+                and dict_data[message_id].get("clone", "") == "0"
+            )
+        ),
+        0,
+    )
 
 
 async def download_media_core(
@@ -99,10 +103,7 @@ def check_auth_download(
         print(f"{file_size_mb=}")
         print(f"{actual_size_mb=}")
         print(f"{max_size_mb=}")
-    if (file_size_mb + actual_size_mb) > max_size_mb:
-        return False
-    else:
-        return True
+    return file_size_mb + actual_size_mb <= max_size_mb
 
 
 async def download_media(
@@ -135,7 +136,7 @@ async def download_media(
     file_name = row_data["file_name"]
     file_size_bytes = int(row_data["file_size"])
 
-    file_path = download_folder / (str(message_id) + "-" + str(file_name))
+    file_path = download_folder / f"{message_id}-{str(file_name)}"
 
     if file_path.exists():
         file_path.unlink()

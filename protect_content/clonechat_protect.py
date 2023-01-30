@@ -26,8 +26,7 @@ def get_config_data(path_file_config: Path):
 
     config_file = ConfigParser()
     config_file.read(path_file_config)
-    default_config = dict(config_file["default"])
-    return default_config
+    return dict(config_file["default"])
 
 
 async def get_client(
@@ -98,8 +97,7 @@ async def get_chat_info(
         chat_obj = await client.get_chat(chat_input)
         chat_id = chat_obj.id
         chat_title = chat_obj.title
-        chat_info = {"chat_id": chat_id, "chat_title": chat_title}
-        return chat_info
+        return {"chat_id": chat_id, "chat_title": chat_title}
     except ChannelInvalid:  # When you are not part of the channel
         print("\nNon-accessible chat")
         return False
@@ -131,14 +129,11 @@ async def get_chat_info_until(client: pyrogram.Client, message: str) -> dict:
         origin_chat_info = await get_chat_info(client, chat_input)
         if isinstance(origin_chat_info, dict):
             break
-        else:
-            return_ = input(
-                "Press 'Enter' to try again or press something to close:\n"
-            )
-            if return_ == "":
-                pass
-            else:
-                sys.exit()
+        return_ = input(
+            "Press 'Enter' to try again or press something to close:\n"
+        )
+        if return_ != "":
+            sys.exit()
 
     return origin_chat_info
 
@@ -148,22 +143,20 @@ def get_cloneplan_path(
 ) -> Path:
 
     folder_path_cloneplan.mkdir(exist_ok=True)
-    clonechat_path = (
+    return (
         folder_path_cloneplan
         / f"cloneplan_{str(abs(chat_dest_id))}-{chat_dest_title}.csv"
     )
-    return clonechat_path
 
 
 def get_history_path(chat_title: str, chat_id: int) -> Path:
 
     log_chats_path = Path("protect_content") / "log_chats"
     log_chats_path.mkdir(exist_ok=True)
-    folder_chat = log_chats_path / f"{str(abs(chat_id))}-{str(chat_title)}"
+    folder_chat = log_chats_path / f"{str(abs(chat_id))}-{chat_title}"
     folder_chat.mkdir(exist_ok=True)
     str_today = date.today().strftime("%Y%m%d")
-    history_path = folder_chat / f"msgs_chat_{abs(chat_id)}_{str_today}.json"
-    return history_path
+    return folder_chat / f"msgs_chat_{abs(chat_id)}_{str_today}.json"
 
 
 async def save_history(
@@ -199,8 +192,7 @@ async def pipe_clone(
 ):
 
     loop = asyncio.get_event_loop()
-    list_tasks = list()
-    list_tasks.append(
+    list_tasks = [
         loop.create_task(
             download.pipe_download(
                 client,
@@ -210,7 +202,7 @@ async def pipe_clone(
                 max_size_mb,
             )
         )
-    )
+    ]
     list_tasks.append(
         loop.create_task(
             upload.pipe_upload(
@@ -232,9 +224,8 @@ def get_recent_history(chat_title: str, chat_id: int) -> Path:
 
     log_chats_path = Path("protect_content") / "log_chats"
     log_chats_path.mkdir(exist_ok=True)
-    folder_chat = log_chats_path / f"{str(abs(chat_id))}-{str(chat_title)}"
-    recent_history = list(folder_chat.iterdir())[-1]
-    return recent_history
+    folder_chat = log_chats_path / f"{str(abs(chat_id))}-{chat_title}"
+    return list(folder_chat.iterdir())[-1]
 
 
 def ask_for_new_clone() -> bool:
@@ -246,8 +237,7 @@ def ask_for_new_clone() -> bool:
     )
     answer = input("Answer: ")
 
-    new_clone = False if answer == "1" else True
-    return new_clone
+    return answer != "1"
 
 
 def show_history_overview(history_path: Path) -> list[str]:
@@ -371,10 +361,7 @@ async def main():
         folder_path_cloneplan, chat_origin_id, chat_origin_title
     )
 
-    new_clone = True
-    if cloneplan_path.exists():
-        new_clone = ask_for_new_clone()
-
+    new_clone = ask_for_new_clone() if cloneplan_path.exists() else True
     if new_clone:
         history_path = get_history_path(chat_origin_title, chat_origin_id)
         await save_history(client, chat_origin_id, history_path)

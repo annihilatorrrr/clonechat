@@ -24,8 +24,7 @@ def get_config_data(path_file_config):
 
     config_file = ConfigParser()
     config_file.read(path_file_config)
-    default_config = dict(config_file["default"])
-    return default_config
+    return dict(config_file["default"])
 
 
 def foward_photo(message, destination_chat):
@@ -242,10 +241,7 @@ def foward_poll(message, destination_chat):
 
 def get_caption(message):
 
-    if message.caption:
-        caption = message.caption.markdown
-    else:
-        caption = None
+    caption = message.caption.markdown if message.caption else None
     return caption
 
 
@@ -294,8 +290,7 @@ def get_input_type_to_copy():
         "Enter the number(s) of the file type to clone, separating by comma."
     )
     print("For example, to copy photos and documents type: 1,3")
-    answer = input("Your answer: ")
-    return answer
+    return input("Your answer: ")
 
 
 def get_files_type_excluded_by_input(input_string):
@@ -303,36 +298,34 @@ def get_files_type_excluded_by_input(input_string):
     files_type_excluded = []
     if input_string == "" or "0" in input_string:
         return files_type_excluded
-    else:
-        if "1" not in input_string:
-            files_type_excluded += [foward_photo]
-        if "2" not in input_string:
-            files_type_excluded += [foward_text]
-        if "3" not in input_string:
-            files_type_excluded += [foward_document]
-        if "4" not in input_string:
-            files_type_excluded += [foward_sticker]
-        if "5" not in input_string:
-            files_type_excluded += [foward_animation]
-        if "6" not in input_string:
-            files_type_excluded += [foward_audio]
-        if "7" not in input_string:
-            files_type_excluded += [foward_voice]
-        if "8" not in input_string:
-            files_type_excluded += [foward_video]
-        if "9" not in input_string:
-            files_type_excluded += [foward_poll]
-        if len(files_type_excluded) == 9:
-            print("Invalid option! Try again")
-            return get_files_type_excluded_by_input(input_string)
+    if "1" not in input_string:
+        files_type_excluded += [foward_photo]
+    if "2" not in input_string:
+        files_type_excluded += [foward_text]
+    if "3" not in input_string:
+        files_type_excluded += [foward_document]
+    if "4" not in input_string:
+        files_type_excluded += [foward_sticker]
+    if "5" not in input_string:
+        files_type_excluded += [foward_animation]
+    if "6" not in input_string:
+        files_type_excluded += [foward_audio]
+    if "7" not in input_string:
+        files_type_excluded += [foward_voice]
+    if "8" not in input_string:
+        files_type_excluded += [foward_video]
+    if "9" not in input_string:
+        files_type_excluded += [foward_poll]
+    if len(files_type_excluded) == 9:
+        print("Invalid option! Try again")
+        return get_files_type_excluded_by_input(input_string)
     return files_type_excluded
 
 
 def get_message(origin_chat, message_id):
 
     try:
-        message = tg.get_messages(origin_chat, message_id)
-        return message
+        return tg.get_messages(origin_chat, message_id)
     except FloodWait as e:
         print(f"..FloodWait {e.value} seconds..")
         time.sleep(e.value)
@@ -364,12 +357,10 @@ def get_list_posted(int_task_type):
             os.remove(CACHE_FILE)
         return []
     else:  # 2 = resume
-        if os.path.exists(CACHE_FILE):
-            with open(CACHE_FILE, mode="r") as file:
-                posted = json.loads(file.read())
-                return posted
-        else:
+        if not os.path.exists(CACHE_FILE):
             return []
+        with open(CACHE_FILE, mode="r") as file:
+            return json.loads(file.read())
 
 
 def wait_a_moment(message_id, skip=False):
@@ -401,10 +392,7 @@ def get_files_type_excluded():
         FILES_TYPE_EXCLUDED = FILES_TYPE_EXCLUDED
         return FILES_TYPE_EXCLUDED
     except:
-        FILES_TYPE_EXCLUDED = get_files_type_excluded_by_input(
-            get_input_type_to_copy()
-        )
-        return FILES_TYPE_EXCLUDED
+        return get_files_type_excluded_by_input(get_input_type_to_copy())
 
 
 def is_empty_message(message, message_id, last_message_id) -> bool:
@@ -429,11 +417,7 @@ def must_be_ignored(func_sender, message_id, last_message_id) -> bool:
 
 def get_first_message_id(list_posted) -> int:
 
-    if len(list_posted) > 0:
-        message_id = list_posted[-1]
-    else:
-        message_id = 1
-    return message_id
+    return list_posted[-1] if len(list_posted) > 0 else 1
 
 
 def ensure_folder_existence(folder_path):
@@ -452,16 +436,14 @@ def get_task_file(ORIGIN_CHAT_TITLE, destination_chat):
     ensure_folder_existence("user")
     ensure_folder_existence(os.path.join("user", "tasks"))
     task_file_name = f"{ORIGIN_CHAT_TITLE}-{destination_chat}.json"
-    task_file_path = os.path.join("user", "tasks", task_file_name)
-    return task_file_path
+    return os.path.join("user", "tasks", task_file_name)
 
 
 def check_chat_id(chat_id):
 
     try:
         chat_obj = tg.get_chat(chat_id)
-        chat_title = chat_obj.title
-        return chat_title
+        return chat_obj.title
     except ChannelInvalid:  # When you are not part of the channel
         print("\nNon-accessible chat")
         if MODE == "bot":
@@ -498,10 +480,6 @@ def ensure_connection(client_name):
                 return useraccount
             except:
                 print("\nError. Try again.\n")
-                pass
-    else:
-        pass
-
     if client_name == "bot":
         if Path(f"{client_name}.session").exists():
             try:
@@ -524,7 +502,6 @@ def ensure_connection(client_name):
                 return bot
             except:
                 print("\nError. Try again.\n")
-                pass
 
 
 def main():
@@ -539,10 +516,7 @@ def main():
     last_message_id = get_last_message_id(origin_chat)
 
     global NEW
-    if NEW is None:
-        int_task_type = task_type()
-    else:
-        int_task_type = NEW
+    int_task_type = task_type() if NEW is None else NEW
     list_posted = get_list_posted(int_task_type)
 
     message_id = get_first_message_id(list_posted)
@@ -613,12 +587,7 @@ Ex. for documents and videos: 3,8 || Options:
 parser.add_argument("--type", help=help_type)
 options = parser.parse_args()
 
-if options.mode is None:
-    MODE = config_data.get("mode")
-else:
-    MODE = options.mode
-
-
+MODE = config_data.get("mode") if options.mode is None else options.mode
 useraccount = ensure_connection("user")
 print(f"{MODE=}")
 if MODE == "bot":
@@ -646,11 +615,7 @@ else:  # CLI interface
     if ORIGIN_CHAT_TITLE is False:
         raise AttributeError("Fix the origin chat_id")
     FILES_TYPE_EXCLUDED = []
-    if NEW is None:
-        NEW = 1
-    else:
-        NEW = int(NEW)
-
+    NEW = 1 if NEW is None else int(NEW)
 if options.dest is None:  # Menu interface
     while True:
         destination_chat = int(input("Enter the destination id_chat:"))
@@ -663,9 +628,7 @@ else:  # CLI interface
     if DESTINATION_CHAT_TITLE is False:
         raise AttributeError("Fix the destination chat_id")
 
-if options.type is None:
-    pass
-else:
+if options.type is not None:
     TYPE = options.type
     FILES_TYPE_EXCLUDED = get_files_type_excluded_by_input(TYPE)
 

@@ -22,13 +22,12 @@ def msgs_types():
        location
        empty
        contact"""
-    list_type = [msg_type.strip() for msg_type in str_list_types.split("\n")]
-    return list_type
+    return [msg_type.strip() for msg_type in str_list_types.split("\n")]
 
 
 def ignore_types():
 
-    list_ignore_types = [
+    return [
         "empty",
         "service",
         "dice",
@@ -36,7 +35,6 @@ def ignore_types():
         "contact",
         "poll",
     ]
-    return list_ignore_types
 
 
 def enrich_fields(cloneplan_dict, msg, key):
@@ -78,9 +76,7 @@ def create_cloneplan(history_path: Path):
     found = False
     cloneplan_list_dict = []
     for msg in list_dict:
-        cloneplan_dict = {}
-        cloneplan_dict["id"] = msg["id"]
-        cloneplan_dict["date"] = msg["date"]
+        cloneplan_dict = {"id": msg["id"], "date": msg["date"]}
         for key in msg.keys():
             if key in list_ignore_types:
                 ignore = True
